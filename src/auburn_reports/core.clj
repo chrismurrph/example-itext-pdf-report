@@ -10,22 +10,28 @@
 
 ;(def side-header-width 140)
 
-(def headers [{:text (nth d/headers 0) :size 80}
-              {:text (nth d/headers 1) :size 80}
-              {:text (nth d/headers 2) :size 60}
-              {:text (nth d/headers 3) :size 150}
-              {:text (nth d/headers 4) :size 150}
+(def headers [{:id (nth d/headers 0) :text "Exception" :size 80 :alignment Element/ALIGN_CENTER}
+              {:id (nth d/headers 1) :text "Timestamp" :size 80 :alignment Element/ALIGN_CENTER}
+              {:id (nth d/headers 2) :text "Type" :size 60 :alignment Element/ALIGN_CENTER}
+              {:id (nth d/headers 3) :text "Worker" :size 150 :alignment Element/ALIGN_CENTER}
+              {:id (nth d/headers 4) :text "Description" :size 150 :alignment Element/ALIGN_CENTER}
               ])
 (def header-widths (float-array (mapv #(-> % :size float) headers)))
-(def header-names (mapv #(-> % :text) headers))
+(def header-ids (mapv #(-> % :id) headers))
 (def total-width (float (reduce + (map :size headers))))
 (def total-num-cols (count headers))
 
 (def some-file-name "report.pdf")
-(println "Now it is" (d/to-long d/now) ", and 2 weeks ago was: " (d/to-long d/two-weeks-ago))
+(println "Now it is" (u/to-long u/now) ", and 2 weeks ago was: " (u/to-long d/two-weeks-ago))
 (u/pr-seq d/some-formatted-dates "DATES")
 
-(defn do-report [doc]
+(defn- set-alignment! [cell heading-id]
+  (.setHorizontalAlignment ^PdfPCell cell (:alignment (first (filter #(= (:id %) heading-id) headers))))
+  ;is no op:
+  ;(.setVerticalAlignment ^PdfPCell cell Element/ALIGN_TOP)
+  )
+
+(defn do-report! [doc]
   (let [headerTable (PdfPTable. total-num-cols)
         rowsTable (PdfPTable. total-num-cols)
         tables [headerTable rowsTable]
@@ -34,15 +40,25 @@
     (run! #(.setTotalWidth ^PdfPTable % total-width) tables)
     (run! #(.setLockedWidth ^PdfPTable % true) tables)
     (run! #(.setWidths ^PdfPTable % header-widths) tables)
-    (doseq [header-name header-names]
-      (let [_ (println "HDR:" header-name)
-            cell (PdfPCell. (Phrase. header-name))]
-        (.addCell headerTable cell)))
+    (doseq [header-id header-ids]
+      (let [header-text (:text (first (filter #(= header-id (:id %)) headers)))
+            _ (println "HDR:" header-text)
+            cell (PdfPCell. (Phrase. header-text))]
+        (set-alignment! cell header-id)
+        (.addCell headerTable cell)
+        (doseq [i (range d/size)]
+          (let [text (d/data-at i header-id)
+                _ (println "txt" i " " header-id " is " text)
+                cell (PdfPCell. (Phrase. text))]
+            (set-alignment! cell header-id)
+            (.addCell rowsTable cell)))))
     (.add doc headerTable)
+    (.add doc rowsTable)
     (.add doc paragraph)))
 
 ;;
 ;; At the moment if the PDF file is already being viewed then this crashes quite badly.
+;; If this code ever used in any proper way lets handle DocumentException
 ;;
 (defn -main
   "I don't do a whole lot ... yet."
@@ -52,7 +68,7 @@
         os (FileOutputStream. some-file-name)
         _ (PdfWriter/getInstance doc os)]
     (.open doc)
-    (do-report doc)
+    (do-report! doc)
     (.close doc)
     (println "See" some-file-name))
   )

@@ -1,4 +1,10 @@
-(ns auburn-reports.utils)
+(ns auburn-reports.utils
+  (:require
+    [clj-time.core :as t]
+    [clj-time.coerce :as c]))
+
+(def now (t/now))
+(defn to-long [date-time] (c/to-long date-time))
 
 (defn str-seq
   ([seq msg]
