@@ -10,15 +10,16 @@
 
 ;(def side-header-width 140)
 
-(def headers [{:text (nth d/headers 0) :size 40}
+(def headers [{:text (nth d/headers 0) :size 80}
               {:text (nth d/headers 1) :size 80}
               {:text (nth d/headers 2) :size 60}
-              {:text (nth d/headers 3) :size 150}])
-(def header-widths (float-array (into [(float side-header-width)] (map #(-> % :size float) headers))))
-(def header-names (into ["Exception"] (map #(-> % :text) headers)))
-(def total-width (reduce + (map :size headers)))
-(def total-num-cols (inc (count headers)))
-(def header-width (float (+ side-header-width total-width)))
+              {:text (nth d/headers 3) :size 150}
+              {:text (nth d/headers 4) :size 150}
+              ])
+(def header-widths (float-array (mapv #(-> % :size float) headers)))
+(def header-names (mapv #(-> % :text) headers))
+(def total-width (float (reduce + (map :size headers))))
+(def total-num-cols (count headers))
 
 (def some-file-name "report.pdf")
 (println "Now it is" (d/to-long d/now) ", and 2 weeks ago was: " (d/to-long d/two-weeks-ago))
@@ -30,7 +31,7 @@
         tables [headerTable rowsTable]
         paragraph (Paragraph. "Joy to The World!")]
     (run! #(.setHorizontalAlignment ^PdfPTable % Element/ALIGN_LEFT) tables)
-    (run! #(.setTotalWidth ^PdfPTable % header-width) tables)
+    (run! #(.setTotalWidth ^PdfPTable % total-width) tables)
     (run! #(.setLockedWidth ^PdfPTable % true) tables)
     (run! #(.setWidths ^PdfPTable % header-widths) tables)
     (doseq [header-name header-names]
@@ -40,6 +41,9 @@
     (.add doc headerTable)
     (.add doc paragraph)))
 
+;;
+;; At the moment if the PDF file is already being viewed then this crashes quite badly.
+;;
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]

@@ -6,7 +6,8 @@
 
 (def custom-formatter (f/formatter "dd/MM/YYYY HH:mm"))
 
-(def headers ["Timestamp"
+(def headers ["Exception"
+              "Timestamp"
               "Type"
               "Worker"
               "Description"])
