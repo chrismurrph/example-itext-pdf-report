@@ -35,6 +35,11 @@
       (set (concat res (random-ints diff pop-size)))
       res)))
 
+(defn random-of [ids]
+  (let [size (count ids)
+        chosen-idx (rand-int size)]
+    (nth ids chosen-idx)))
+
 ;;
 ;; from-world and to-world are maps of type {:min _ :max _}
 ;; These max and min are inclusive, so the exact middle when :min 0 and :max 10 is 5

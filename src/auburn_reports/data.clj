@@ -11,8 +11,16 @@
 
 (defn- from-long [long-time] (c/from-long long-time))
 
-(def two-weeks-ago (t/plus u/now (t/weeks -2)))
 (defn- format-date [date-time] (f/unparse custom-formatter date-time))
+(defn- parse-date [formatted-date] (f/parse custom-formatter formatted-date))
+
+(def two-weeks-ago (t/plus u/now (t/weeks -2)))
+
+;; Use this for time of last roster
+(defn one-week-ago-from [date-time] (t/plus date-time (t/weeks -1)))
+
+(defn one-week-ahead-from [date-time] (t/plus date-time (t/weeks 1)))
+(defn two-days-ahead-from [date-time] (t/plus date-time (t/days 2)))
 
 ;;
 ;; Given a number which will be between 0 and 99 inclusive, return what time this will be between two weeks
@@ -35,10 +43,34 @@
               :description])
 
 (def size (count some-formatted-dates))
+(def library-name "Lidcombe Library")
+
+;(println (-> "28/11/2015 21:03" parse-date one-week-ahead-from format-date))
+
+(defn- desc-from-type [chosen-type formatted-date]
+  ;(println "IN: " formatted-date)
+  (case chosen-type :flex-expired (str "Flex day expired when roster came out for "
+                                       (-> formatted-date parse-date one-week-ahead-from format-date))
+                    :flex-warning (str "Will loose Flex day if not used before next roster due out on "
+                                       (-> formatted-date parse-date two-days-ahead-from format-date))
+                    :understaffed (str "Will be understaffed by one at circulation desk on "
+                                       (-> formatted-date parse-date one-week-ago-from format-date))
+                    :fail-turn-up "Not clocked on by 9:20am for 9:00am reference desk shift"
+                    :over-budget "Published roster is over budget"))
+
+(defn- by-id-and-type [id chosen-type idx]
+  (let [formatted-date (nth some-formatted-dates idx)]
+    (case id
+      :exception nil
+      :timestamp formatted-date
+      :type (case chosen-type :flex-expired "Flex Expired"
+                              :flex-warning "Flex Warning"
+                              :understaffed "Understaffed"
+                              :fail-turn-up "Fail Turn Up"
+                              :over-budget "Over Budget")
+      :worker (u/random-of ["Chris Murphy" "Efren Katague" "Tomek Manko"])
+      :description (desc-from-type chosen-type formatted-date))))
 
 (defn data-at [idx id]
-  (id {:exception "EXP"
-       :timestamp (nth some-formatted-dates idx)
-       :type "Fail Turn Up"
-       :worker "Chris"
-       :description "Not clocked in by 9:20 for 9:00"}))
+  (let [chosen-type (u/random-of [:flex-expired :flex-warning :understaffed :fail-turn-up :over-budget])]
+    (by-id-and-type id chosen-type idx)))
