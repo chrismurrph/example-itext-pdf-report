@@ -60,6 +60,9 @@
 (defn mid-section [v]
   (subvec v 1 (dec (count v))))
 
+(defn except-last [v]
+  (subvec v 0 (dec (count v))))
+
 (defn fmap
   [f m]
   (->>

@@ -32,7 +32,7 @@
         res (u/scale from-world to-world rand-int)]
     res))
 
-(def ^:private some-long-dates (sort (map scale-rand-to-long-date some-ints)))
+(def ^:private some-long-dates (reverse (sort (map scale-rand-to-long-date some-ints))))
 
 (def some-formatted-dates (map (comp format-date from-long) some-long-dates))
 
@@ -49,8 +49,7 @@
 
 (defn- desc-from-type [chosen-type formatted-date]
   ;(println "IN: " formatted-date)
-  (case chosen-type :flex-expired (str "Flex day expired when roster came out for "
-                                       (-> formatted-date parse-date one-week-ahead-from format-date))
+  (case chosen-type :flex-expired "Flex day expired when roster came out"
                     :flex-warning (str "Will loose Flex day if not used before next roster due out on "
                                        (-> formatted-date parse-date two-days-ahead-from format-date))
                     :understaffed (str "Will be understaffed by one at circulation desk on "
