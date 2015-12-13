@@ -73,29 +73,32 @@
     (let [first-header (first headers)
           first-cell (PdfPCell. (Phrase. (:text first-header)))]
       (set-header-alignment! first-cell first-header)
+      (.setGrayFill first-cell 0.75)
       (.addCell headerTable first-cell))
     (doseq [header middle-headers]
       (let [header-text (:text header)
             ;_ (println "HDR:" header-text)
             cell (PdfPCell. (Phrase. header-text))]
         (set-header-alignment! cell header)
+        (.setGrayFill cell 0.75)
         (.addCell headerTable cell)))
     (doseq [i (range d/size)]
-      (let [first-cell (PdfPCell. (Phrase. (d/data-at i (:id first-header))))]
-        (.setRowspan first-cell 2)
-        (set-body-alignment! first-cell first-header)
-        (.addCell rowsTable first-cell))
-      (doseq [header middle-headers]
-        (let [text (d/data-at i (:id header))
-              ;_ (println "txt" i " " header-id " is " text)
-              cell (PdfPCell. (Phrase. text))]
-          (set-body-alignment! cell header)
-          (.addCell rowsTable cell)))
-      (let [last-cell (PdfPCell. (Phrase. (d/data-at i (:id last-header))))]
-        (.setGrayFill last-cell 0.95)
-        (.setColspan last-cell total-num-cols)
-        (set-body-alignment! last-cell last-header)
-        (.addCell rowsTable last-cell)))
+      (let [data-row (d/data-at i)]
+        (let [first-cell (PdfPCell. (Phrase. ((:id first-header) data-row)))]
+          (.setRowspan first-cell 2)
+          (set-body-alignment! first-cell first-header)
+          (.addCell rowsTable first-cell))
+        (doseq [header middle-headers]
+          (let [text ((:id header) data-row)
+                ;_ (println "txt" i " " header-id " is " text)
+                cell (PdfPCell. (Phrase. text))]
+            (set-body-alignment! cell header)
+            (.addCell rowsTable cell)))
+        (let [last-cell (PdfPCell. (Phrase. ((:id last-header) data-row)))]
+          (.setGrayFill last-cell 0.95)
+          (.setColspan last-cell total-num-cols)
+          (set-body-alignment! last-cell last-header)
+          (.addCell rowsTable last-cell))))
     (.add doc headerTable)
     (.add doc rowsTable)))
 

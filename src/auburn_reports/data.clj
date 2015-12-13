@@ -57,19 +57,19 @@
                     :fail-turn-up "Not clocked on by 9:20am for 9:00am reference desk shift"
                     :over-budget "Published roster is over budget"))
 
-(defn- by-id-and-type [id chosen-type idx]
+(defn- by-id-and-type [chosen-type idx worker-needed?]
   (let [formatted-date (nth some-formatted-dates idx)]
-    (case id
-      :exception nil
-      :timestamp formatted-date
-      :type (case chosen-type :flex-expired "Flex Expired"
-                              :flex-warning "Flex Warning"
-                              :understaffed "Understaffed"
-                              :fail-turn-up "Fail Turn Up"
-                              :over-budget "Over Budget")
-      :worker (u/random-of ["Chris Murphy" "Efren Katague" "Tomek Manko"])
-      :description (desc-from-type chosen-type formatted-date))))
+    {:exception nil
+     :timestamp formatted-date
+     :type (case chosen-type :flex-expired "Flex Expired"
+                             :flex-warning "Flex Warning"
+                             :understaffed "Understaffed"
+                             :fail-turn-up "Fail Turn Up"
+                             :over-budget "Over Budget")
+     :worker (when worker-needed? (u/random-of ["Chris Murphy" "Efren Katague" "Tomek Manko"]))
+     :description (desc-from-type chosen-type formatted-date)}))
 
-(defn data-at [idx id]
-  (let [chosen-type (u/random-of [:flex-expired :flex-warning :understaffed :fail-turn-up :over-budget])]
-    (by-id-and-type id chosen-type idx)))
+(defn data-at [idx]
+  (let [chosen-type (u/random-of [:flex-expired :flex-warning :understaffed :fail-turn-up :over-budget])
+        worker-not-needed? (or (= chosen-type :over-budget) (= chosen-type :understaffed))]
+    (by-id-and-type chosen-type idx (not worker-not-needed?))))
