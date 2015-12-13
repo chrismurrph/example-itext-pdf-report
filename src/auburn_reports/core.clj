@@ -36,17 +36,17 @@
                :body-alignment Element/ALIGN_LEFT
                }
               ])
-(def header-widths (float-array (mapv #(-> % :size float) headers)))
+;(def header-widths (float-array (mapv #(-> % :size float) headers)))
 (def header-ids (mapv #(-> % :id) headers))
-(def total-width (float (reduce + (map :size headers))))
-(def total-num-cols (count headers))
+;(def total-width (float (reduce + (map :size headers))))
+;(def total-num-cols (count headers))
 
 (def some-file-name "report.pdf")
 (println "Now it is" (u/to-long u/now) ", and 2 weeks ago was: " (u/to-long d/two-weeks-ago))
 (u/pr-seq d/some-formatted-dates "DATES")
 
-(defn- set-alignment! [id cell heading-id]
-  (.setHorizontalAlignment ^PdfPCell cell (id (first (filter #(= (:id %) heading-id) headers))))
+(defn- set-alignment! [align-id cell heading]
+  (.setHorizontalAlignment ^PdfPCell cell (align-id heading))
   ;is no op:
   ;(.setVerticalAlignment ^PdfPCell cell Element/ALIGN_TOP)
   )
@@ -55,34 +55,33 @@
 (def set-body-alignment! (partial set-alignment! :body-alignment))
 
 (defn do-report! [doc]
-  (let [headerTable (PdfPTable. total-num-cols)
+  (let [middle-headers (u/mid-section headers)
+        total-width (float (reduce + (map :size middle-headers)))
+        header-widths (float-array (mapv #(-> % :size float) middle-headers))
+        total-num-cols (count middle-headers)
+        headerTable (PdfPTable. total-num-cols)
         rowsTable (PdfPTable. total-num-cols)
         tables [headerTable rowsTable]
-        ;headerParagraph (Paragraph. (str "Exceptions Report: " d/library-name))
         ]
     (run! #(.setHorizontalAlignment ^PdfPTable % Element/ALIGN_LEFT) tables)
     (run! #(.setTotalWidth ^PdfPTable % total-width) tables)
     (run! #(.setLockedWidth ^PdfPTable % true) tables)
     (run! #(.setWidths ^PdfPTable % header-widths) tables)
-    (doseq [header-id header-ids]
-      (let [header-text (:text (first (filter #(= header-id (:id %)) headers)))
+    (doseq [header middle-headers]
+      (let [header-text (:text header)
             ;_ (println "HDR:" header-text)
             cell (PdfPCell. (Phrase. header-text))]
-        (set-header-alignment! cell header-id)
+        (set-header-alignment! cell header)
         (.addCell headerTable cell)))
     (doseq [i (range d/size)]
-      (doseq [header-id header-ids]
-        (let [text (d/data-at i header-id)
+      (doseq [header middle-headers]
+        (let [text (d/data-at i (:id header))
               ;_ (println "txt" i " " header-id " is " text)
               cell (PdfPCell. (Phrase. text))]
-          (set-body-alignment! cell header-id)
-          (.addCell rowsTable cell)
-          (when (= header-id ::description)
-            ))))
-    ;(.add doc headerParagraph)
+          (set-body-alignment! cell header)
+          (.addCell rowsTable cell))))
     (.add doc headerTable)
-    (.add doc rowsTable)
-    ))
+    (.add doc rowsTable)))
 
 ;;
 ;; At the moment if the PDF file is already being viewed then this crashes quite badly.

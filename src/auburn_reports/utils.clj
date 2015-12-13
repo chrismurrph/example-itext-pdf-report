@@ -57,6 +57,9 @@
         ]
     rounded-res))
 
+(defn mid-section [v]
+  (subvec v 1 (dec (count v))))
+
 (defn fmap
   [f m]
   (->>
